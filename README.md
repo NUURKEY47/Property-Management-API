@@ -44,3 +44,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Pull requests welcome!
 ## License
 MIT License—see [LICENSE](LICENSE) for details.
 
+## Contributing
+PRs are welcome!  
+If you'd like to contribute, please read the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.  
+Bug fixes, features, improvements, and documentation updates are appreciated.
