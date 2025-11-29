@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  managedById  Int?
+  unitId       Int?
+  idNumber     String?
+  password     String?
+  phone        String?
+  username     String?
+  contract     String?
+  occupation   String?
+  regDate      DateTime?
+  role         UserRole
+  status        String? @default("active")
+  bookings     Booking[]  @relation("UserBookings")
+  invoices     Invoice[]  @relation("UserInvoices")
+  payments     Payment[]  @relation("UserPayments")
+  properties   Property[] @relation("LandlordProperties")
+  manager      User?      @relation("ManagedBy", fields: [managedById], references: [id])
+  managedUsers User[]     @relation("ManagedBy")
+  unit         Unit?      @relation("UnitTenants", fields: [unitId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
+  @@map("users")
+}
+
+model Property {
+  id          Int       @id @default(autoincrement())
+  name        String
+  location    String
+  categoryId  Int
+  landlordId  Int
+  description String?
+  regDate     DateTime?
+  category    Category  @relation(fields: [categoryId], references: [id])
+  landlord    User      @relation("LandlordProperties", fields: [landlordId], references: [id])
+  units       Unit[]
+
+  @@index([categoryId])
+  @@map("properties")
+}
+
+model Unit {
+  id          Int       @id @default(autoincrement())
+  name        String
+  price       Float
+  status      String
+  propertyId  Int
+  size        String?
+  description String?
+  image1      String?
+  image2      String?
+  image3      String?
+  regDate     DateTime?
+  bookings    Booking[] @relation("UnitBookings")
+  invoices    Invoice[] @relation("UnitInvoices")
+  property    Property  @relation(fields: [propertyId], references: [id])
+  tenants     User[]    @relation("UnitTenants")
+
+  @@map("units")
+}
+
+model Category {
+  id         Int        @id @default(autoincrement())
+  name       String
+  properties Property[]
+
+  @@map("categories")
+}
+
+model Invoice {
+  id        Int       @id @default(autoincrement())
+  amount    Float
+  dueDate   DateTime
+  status    String
+  userId    Int
+  createdAt DateTime  @default(now())
+  unitId    Int?
+  unit      Unit?     @relation("UnitInvoices", fields: [unitId], references: [id])
+  user      User      @relation("UserInvoices", fields: [userId], references: [id])
+  payments  Payment[] @relation("InvoicePayments")
+
+  @@map("invoices")
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  invoiceId   Int
+  userId      Int
+  method      String?
+  paymentDate DateTime
+  invoice     Invoice  @relation("InvoicePayments", fields: [invoiceId], references: [id])
+  user        User     @relation("UserPayments", fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  unitId    Int
+  startDate DateTime
+  duration  Int
+  status    String   @default("Pending")
+  createdAt DateTime @default(now())
+  unit      Unit     @relation("UnitBookings", fields: [unitId], references: [id])
+  user      User     @relation("UserBookings", fields: [userId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  LANDLORD
+  TENANT
+}

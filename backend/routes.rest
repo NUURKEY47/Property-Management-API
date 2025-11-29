@@ -1,0 +1,42 @@
+###
+POST http://localhost:3000/api/v1/auth/registry
+Content-Type: application/json
+
+{
+    "name":"noor",
+    "email": "noor6@gmail.com",
+    "password":"12345",
+    "role":"LANDLORD"
+
+}
+###
+POST http://localhost:3000/api/v1/auth/login
+Content-Type: application/json
+
+{
+
+"email": "noor@gmail.com",
+"password": "123456"
+
+}
+###
+
+//get ALL users 
+
+
+GET http://localhost:3000/api/v1/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTIsImVtYWlsIjoieWVzc25vb3IxNDNAZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzYzNzI3MDc2LCJleHAiOjE3NjM3MzA2NzZ9.wHhbHrIO1nAzKcgD8OTYIwaNiJ_7jhipDHyAMFJ9oSQ
+
+###
+GET http://localhost:3000/api/v1/users?role=LANDLORD   
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTIsImVtYWlsIjoieWVzc25vb3IxNDNAZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzYzNzI3MDc2LCJleHAiOjE3NjM3MzA2NzZ9.wHhbHrIO1nAzKcgD8OTYIwaNiJ_7jhipDHyAMFJ9oSQ
+//ADMIN//TENANT
+
+###
+GET http://localhost:3000/api/v1/users?email=noor 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzbnJmb3JleDE0M0BnbWFpbC5jb20iLCJyb2xlIjoiTEFORExPUkQiLCJpYXQiOjE3NjM3MzM4MzgsImV4cCI6MTc2MzczNzQzOH0.12WZkD__et54blvJQmIjDcyqbfsPcbKHAvLpw2ADzBY
+###
+
+
+GET http://localhost:3000/api/v1/users/789
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJ5ZXNzbm9vcjE0M0BnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjM3MzQxMzQsImV4cCI6MTc2MzczNzczNH0.XNo3Pr7PgFJriLJ_aSqjTxNAeOh6W-s_AxML1qAp8_Y

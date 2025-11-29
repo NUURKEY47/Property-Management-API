@@ -1,0 +1,18 @@
+import {createProperty, updatePropertyById, getProperty, deletePropertyById} from "./property.controller.js"
+import { validate } from "../../middlewares/validateMiddleware.js"
+import {createPropertySchema,updatePropertySchema} from "../../validation/propertySchemas.js"
+import { verifyToken, authorizeRoles } from "../../middlewares/auth.js";
+import catchAsync from "../../utils/catchAsync.js";
+import express from "express";
+
+const router = express.Router();
+
+
+
+router.post("/", verifyToken, authorizeRoles("LANDLORD","ADMIN"), validate(createPropertySchema),  catchAsync(createProperty))
+router.put("/:id", verifyToken, authorizeRoles("LANDLORD", "ADMIN"), validate(updatePropertySchema), catchAsync(updatePropertyById));
+router.get("/", verifyToken, authorizeRoles("LANDLORD", "ADMIN"), catchAsync(getProperty));
+router.delete("/:id", verifyToken, authorizeRoles("LANDLORD", "ADMIN"), catchAsync(deletePropertyById));
+
+
+export default router;
