@@ -4,14 +4,44 @@ import express from "express";
 import { verifyToken, authorizeRoles } from "../../middlewares/auth.js";
 import catchAsync from "../../utils/catchAsync.js";
 import { validate } from "../../middlewares/validateMiddleware.js";
-import { createUnitSchema, updateUnitSchema } from "../../validation/unitSchemas.js";
-import { createUnit, updateUnit, listUnits, deleteUnit } from "./unit.controller.js";
+import {
+  createUnitSchema,
+  updateUnitSchema,
+} from "../../validation/unitSchemas.js";
+import {
+  createUnit,
+  updateUnit,
+  listUnits,
+  deleteUnit,
+} from "./unit.controller.js";
 
 const router = express.Router();
 
-router.post("/", verifyToken, authorizeRoles("LANDLORD", "ADMIN"), validate(createUnitSchema), catchAsync(createUnit));
-router.put("/:id", verifyToken, authorizeRoles("LANDLORD", "ADMIN"), validate(updateUnitSchema), catchAsync(updateUnit));
-router.get("/", verifyToken, authorizeRoles("LANDLORD", "ADMIN"), catchAsync(listUnits));
-router.delete("/:id", verifyToken, authorizeRoles("LANDLORD", "ADMIN"), catchAsync(deleteUnit));
+router.post(
+  "/",
+  verifyToken,
+  authorizeRoles("LANDLORD", "ADMIN"),
+  validate(createUnitSchema),
+  catchAsync(createUnit)
+);
+router.put(
+  "/:id",
+  verifyToken,
+  authorizeRoles("LANDLORD", "ADMIN"),
+  validate(updateUnitSchema),
+  catchAsync(updateUnit)
+);
+router.get(
+  "/",
+  verifyToken,
+  authorizeRoles("LANDLORD", "ADMIN"),
+  catchAsync(listUnits)
+);
+router.delete(
+  "/:id",
+  verifyToken,
+  authorizeRoles("LANDLORD", "ADMIN"),
+  catchAsync(deleteUnit)
+);
 
 export default router;

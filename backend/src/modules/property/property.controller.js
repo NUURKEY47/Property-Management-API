@@ -4,11 +4,24 @@ import AppError from "../../utils/AppError.js";
 //create Property
 export const createProperty = async (req, res, next) => {
   const data = { ...req.body };
-  data.landlordId = req.user.id; // set id to authenticated user
-  console.log(data.landlordId);
-  
 
-const category = await prisma.category.findUnique({
+  if (req.user.role === "LANDLORD") {
+    data.landlordId = req.user.id; // Auto-set and override if passed
+  } else if (req.user.role === "ADMIN") {
+    if (!data.landlordId) {
+      return next(new AppError("Landlord ID is required for admins", 422));
+    }
+
+    const landlord = await prisma.user.findUnique({
+      where: { id: data.landlordId },
+    });
+
+    if (!landlord || landlord.role !== "LANDLORD") {
+      return next(new AppError("Invalid landlord ID", 400));
+    }
+  }
+
+  const category = await prisma.category.findUnique({
     where: { id: data.categoryId },
   });
 
@@ -16,7 +29,6 @@ const category = await prisma.category.findUnique({
     return next(new AppError("Category not found", 404));
   }
 
-  // Create property
   const property = await prisma.property.create({
     data,
   });
@@ -85,7 +97,7 @@ export const getProperty = async (req, res, next) => {
   const where = {};
 
   if (req.user.role === "LANDLORD") {
-    where.landlordId = req.user.id;
+    where.landlordId = req.user.id; // Restrict to own for landlords
   }
 
   if (location) {
@@ -96,7 +108,11 @@ export const getProperty = async (req, res, next) => {
   }
 
   if (categoryId) {
-    where.categoryId = parseInt(categoryId);
+    const catId = parseInt(categoryId);
+    if (isNaN(catId)) {
+      return next(new AppError("Invalid category ID", 400));
+    }
+    where.categoryId = catId;
   }
 
   const properties = await prisma.property.findMany({
@@ -111,6 +127,33 @@ export const getProperty = async (req, res, next) => {
     data: properties,
   });
 };
+// -----------------------------------------------------------------------------------------------------
+export const getPropertyById = async (req, res, next) => {
+  const id = parseInt(req.params.id);
+
+  if (isNaN(id) || id <= 0) {
+    return next(new AppError("Invalid property ID", 400));
+  }
+
+  const property = await prisma.property.findUnique({
+    where: { id },
+    include: { category: true },
+  });
+
+  if (!property) {
+    return next(new AppError("Property not found", 404));
+  }
+
+  if (req.user.role === "LANDLORD" && property.landlordId !== req.user.id) {
+    return next(new AppError("You do not own this property", 403));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: property,
+  });
+};
+// ---------------------------------------------------------------------------------------------------------
 
 // Delete Property (DELETE /properties/:id)
 export const deletePropertyById = async (req, res, next) => {

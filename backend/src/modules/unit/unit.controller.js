@@ -44,7 +44,10 @@ export const updateUnit = async (req, res, next) => {
     return next(new AppError("Unit not found", 404));
   }
 
-  if (req.user.role === "LANDLORD" && existingUnit.property.landlordId !== req.user.id) {
+  if (
+    req.user.role === "LANDLORD" &&
+    existingUnit.property.landlordId !== req.user.id
+  ) {
     return next(new AppError("You do not own this unit", 403));
   }
 
@@ -116,7 +119,10 @@ export const deleteUnit = async (req, res, next) => {
     return next(new AppError("Unit not found", 404));
   }
 
-  if (req.user.role === "LANDLORD" && existingUnit.property.landlordId !== req.user.id) {
+  if (
+    req.user.role === "LANDLORD" &&
+    existingUnit.property.landlordId !== req.user.id
+  ) {
     return next(new AppError("You do not own this unit", 403));
   }
 
