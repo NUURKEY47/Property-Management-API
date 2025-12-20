@@ -11,6 +11,7 @@ import {
 import {
   createUnit,
   updateUnit,
+  getUnitById,
   listUnits,
   deleteUnit,
 } from "./unit.controller.js";
@@ -30,6 +31,12 @@ router.put(
   authorizeRoles("LANDLORD", "ADMIN"),
   validate(updateUnitSchema),
   catchAsync(updateUnit)
+);
+router.get(
+  "/:id",
+  verifyToken,
+  authorizeRoles("LANDLORD", "ADMIN"),
+  catchAsync(getUnitById) // New handler
 );
 router.get(
   "/",
