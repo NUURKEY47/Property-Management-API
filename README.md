@@ -1,50 +1,71 @@
 # RealApi - Real Estate Management Backend
-
-## Description
-A full-featured backend API for real estate management, built with Express.js, Prisma (PostgreSQL), JWT authentication, role-based access (Admin, Landlord, Tenant), Zod validation, and global error handling. Features user management, property/unit CRUD with ownership checks, and relationships for secure data isolation. Ideal for broker-style apps where admins oversee, landlords manage properties/tenants, and tenants book/pay.
+**A secure, scalable backend API for real estate management**  
+Built with Node.js, Express, Prisma (PostgreSQL), JWT authentication, role-based access control (Admin, Landlord, Tenant), Zod validation, and global error handling. Ideal for broker platforms where admins oversee, landlords manage properties/units/tenants, and tenants book/pay.
 
 ## Features
-- User authentication (register/login with roles, password hashing)
-- Admin-only user CRUD with pagination, status toggle, tenant assignment
-- Landlord-owned property/unit CRUD with filters, availability checks
-- Relationships: Landlords own properties/units; tenants assigned to units
-- Validation and error handling (Zod, AppError)
-- Swagger docs for API endpoints
-- Secure: Ownership filters, role restrictions
+- **Authentication**: Register/login with roles, password hashing (bcrypt), JWT tokens
+- **Role-Based Access**: Admins manage all; Landlords own/manage properties/units; Tenants view/pay assigned units
+- **User Management**: Admin CRUD users, assign tenants to units with availability checks
+- **Property & Unit CRUD**: Ownership enforced, filters (location/category/status), delete restrictions (no delete if occupied/units exist)
+- **Relationships**: Landlord → Properties (1:N), Property → Units (1:N), Tenant → Unit (M:1)
+- **Validation & Errors**: Zod for input, AppError for custom messages, global handler
+- **API Documentation**: Swagger UI at `/docs`
+- **Clean Architecture**: Controller → Service → Repository pattern
+- **Open Source**: MIT License, contributions welcome!
 
 ## Tech Stack
-- Node.js / Express.js
-- Prisma ORM with PostgreSQL
-- JWT & bcrypt for auth
-- Zod for validation
-- Swagger for docs
+- Node.js + Express.js
+- Prisma ORM + PostgreSQL
+- JWT + bcrypt (auth)
+- Zod (validation)
+- Swagger (docs)
+- Nodemon (dev)
+- GitHub Actions (optional CI)
 
 ## Installation
-1. Clone the repo: `git clone https://github.com/yourusername/RealApi.git`
-2. Install deps: `npm install`
-3. Copy `.env.example` to `.env` and fill in (DATABASE_URL, JWT_SECRET)
-4. Prisma setup: `npx prisma generate` and `npx prisma migrate dev`
-5. Start server: `npm start` (or nodemon for dev)
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/NUURKEY47/RealApi.git
+   cd RealApi
 
-## Usage
-- Register admin first (no token needed).
-- Use Postman/Swagger at /docs for testing endpoints.
-- Example: POST /api/v1/auth/registry with body { "name": "Admin", "email": "admin@example.com", "password": "securepass", "role": "ADMIN" }
+Install dependencies:Bashnpm install
+Create .env from .env.example and fill in:textDATABASE_URL="postgresql://user:pass@localhost:5432/realapi"
+JWT_SECRET="your-very-secure-secret"
+Initialize Prisma:Bashnpx prisma generate
+npx prisma migrate dev --name init
+Start development server:Bashnpm run dev
+Access Swagger docs: http://localhost:3000/api-docs
 
-## API Endpoints
-- Auth: /auth/registry (POST), /auth/login (POST)
-- Users: /users (GET list/filter), /users/{id} (GET/PUT/DELETE)—admin only
-- Properties: /properties (POST/GET list/filter), /properties/{id} (PUT/DELETE)—landlord own/admin all
-- Units: /units (POST/GET list/filter), /units/{id} (PUT/DELETE)—landlord own/admin all
-(See Swagger for full details/responses)
+Usage
 
-## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Pull requests welcome!
+Register first admin (no token needed): POST /api/v1/auth/registry with role "ADMIN"
+Login for token: POST /api/v1/auth/login
+Use Bearer token in Authorization header for protected routes
+Test all endpoints in Postman (collection in repo: RealestateApi.postman_collection.json)
 
-## License
-MIT License—see [LICENSE](LICENSE) for details.
+API Endpoints (Summary)
 
-## Contributing
-PRs are welcome!  
-If you'd like to contribute, please read the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.  
-Bug fixes, features, improvements, and documentation updates are appreciated.
+Auth: /auth/registry (POST), /auth/login (POST)
+Users: /users (GET list/filter), /users/:id (GET/PUT/DELETE) – admin only
+Properties: /properties (POST/GET list), /properties/:id (PUT/DELETE) – landlord own/admin all
+Units: /units (POST/GET list), /units/:id (PUT/DELETE) – landlord own/admin all
+See Swagger at /api-docs for full docs, schemas, and examples.
+
+Contributing
+Contributions are welcome! Please see CONTRIBUTING.md for guidelines.
+
+Fork the repo
+Create your branch (git checkout -b feature/awesome-feature)
+Commit changes (git commit -m 'Add awesome feature')
+Push (git push origin feature/awesome-feature)
+Open a Pull Request
+
+License
+MIT License – see LICENSE for details.
+Contact
+
+GitHub: @NUURKEY47
+LinkedIn: [Your LinkedIn Profile]
+Email: [your.email@example.com]
+
+Made with ❤️ in Nairobi, Kenya
