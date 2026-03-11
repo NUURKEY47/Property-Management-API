@@ -1,5 +1,3 @@
-// src/modules/unit/unit.repository.js
-
 import prisma from "../../config/db.js";
 
 export const unitRepository = {
@@ -9,11 +7,6 @@ export const unitRepository = {
 
   createUnit: async (data) => {
     return await prisma.unit.create({ data });
-  },
-  findLandlordProperties: async (landlordId) => {
-    return await prisma.property.findMany({
-      where: { landlordId },
-    });
   },
 
   findUnitById: async (id, includeProperty = false) => {
@@ -49,4 +42,12 @@ export const unitRepository = {
   deleteUnit: async (id) => {
     return await prisma.unit.delete({ where: { id } });
   },
+
+findLandlordProperties: async (landlordId) => {
+  return await prisma.property.findMany({
+    where: { landlordId },
+    select: { id: true },
+  });
+},
+
 };

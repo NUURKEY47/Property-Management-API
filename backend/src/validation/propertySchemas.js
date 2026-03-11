@@ -17,4 +17,6 @@ export const updatePropertySchema = z.object({
   description: z.string().optional(),
 });
 
-
+export const assignLandlordSchema = z.object({
+  landlordId: z.number().int().positive("Landlord ID must be a positive integer"),
+});

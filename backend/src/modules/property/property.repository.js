@@ -1,16 +1,8 @@
-// src/modules/property/property.repository.js
-
 import prisma from "../../config/db.js";
 
 export const propertyRepository = {
   findCategoryById: async (id) => {
     return await prisma.category.findUnique({ where: { id } });
-  },
-  findLandlordProperties: async (landlordId) => {
-    return await prisma.property.findMany({
-      where: { landlordId },
-      orderBy: { id: 'asc' }, // or { regDate: 'desc' } for newest first
-    });
   },
 
   findUserById: async (id) => {
@@ -29,6 +21,21 @@ export const propertyRepository = {
     return await prisma.property.update({
       where: { id },
       data,
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        categoryId: true,
+        description: true,
+        landlordId: true,
+      },
+    });
+  },
+
+  updatePropertyLandlordId: async (propertyId, landlordId) => {
+    return await prisma.property.update({
+      where: { id: propertyId },
+      data: { landlordId },
       select: {
         id: true,
         name: true,

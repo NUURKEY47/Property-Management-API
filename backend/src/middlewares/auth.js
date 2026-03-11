@@ -5,7 +5,7 @@ export const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-throw new AppError("no token provided", 401);
+    throw new AppError("no token provided", 401);
   }
 
   const token = authHeader.split(" ")[1];
@@ -18,6 +18,7 @@ throw new AppError("no token provided", 401);
       id: decoded.id,
       email: decoded.email,
       role: decoded.role,
+      managedById: decoded.managedById,
     };
 
     next();
@@ -30,8 +31,10 @@ throw new AppError("no token provided", 401);
 export const authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
-     throw new AppError("insufficient Permission", 401);
+      throw new AppError("insufficient Permission", 401);
     }
     next();
   };
 };
+
+

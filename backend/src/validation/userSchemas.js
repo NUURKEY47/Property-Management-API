@@ -9,3 +9,11 @@ export const updateSchema = z.object({
   role: z.enum(["ADMIN", "LANDLORD", "TENANT"], "Invalid role - must be ADMIN, LANDLORD, or TENANT").optional(),
 status: z.enum(["active", "inactive", "pending"], "Invalid status - must be active, inactive, or pending").optional(),
 });
+
+
+export const createLandlordSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  // role is auto-set in service, no need to pass
+});

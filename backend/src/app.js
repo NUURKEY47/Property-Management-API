@@ -4,7 +4,10 @@ import authRoutes from "./modules/auth/auth.routes.js"
 import userRoute from "./modules/user/user.routes.js"
 import propertyRoute from "./modules/property/property.routes.js"
 import unitRoute from "./modules/unit/unit.routes.js"
+import landlordUnit from "./modules/landlord/landlord.routes.js"
+import tenantRoute from "./modules/tenant/tenant.routes.js"
 import globalErrorHandler from "./middlewares/errorHandler.js";
+
 
 
 
@@ -18,8 +21,8 @@ app.use("/api/v1/auth", authRoutes)
 app.use("/api/v1/users", userRoute)
 app.use("/api/v1/property", propertyRoute)
 app.use("/api/v1/units", unitRoute)
-
-
+app.use("/api/v1/landlords", landlordUnit)
+app.use("/api/v1/tenants", tenantRoute)
 
 
 

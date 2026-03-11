@@ -1,16 +1,33 @@
-import {getAllUsers, getUserById,updateUserById, deleteUserById } from "./user.controller.js"
+import express from "express";
 import { verifyToken, authorizeRoles } from "../../middlewares/auth.js";
 import { validate } from "../../middlewares/validateMiddleware.js";
-import {updateSchema} from "../../validation/userSchemas.js"
-import catchAsync from "../../utils/catchAsync.js";
-import express from "express";
+import { updateSchema , createLandlordSchema} from "../../validation/userSchemas.js";
+import {
+  createLandlord,
+  getAllUsers,
+  getUserById,
+  updateUserById,
+  deleteUserById,
+} from "./user.controller.js";
 
 const router = express.Router();
 
-router.get('/', verifyToken , authorizeRoles("ADMIN"), catchAsync(getAllUsers))
-router.get("/:id", verifyToken, authorizeRoles("ADMIN") , catchAsync(getUserById))
-router.put("/:id", verifyToken, authorizeRoles("ADMIN"), validate(updateSchema), catchAsync(updateUserById ));
-router.delete("/:id", verifyToken, authorizeRoles("ADMIN"), catchAsync(deleteUserById));
+router.post(
+  "/landlords",
+  verifyToken,
+  authorizeRoles("ADMIN"), // only admins/sub-admins can create landlords
+  validate(createLandlordSchema), // reuse or create new schema for name/email/password
+  createLandlord,
+);
+router.get("/", verifyToken, authorizeRoles("ADMIN"), getAllUsers);
+router.get("/:id", verifyToken, authorizeRoles("ADMIN"), getUserById);
+router.put(
+  "/:id",
+  verifyToken,
+  authorizeRoles("ADMIN"),
+  validate(updateSchema),
+  updateUserById,
+);
+router.delete("/:id", verifyToken, authorizeRoles("ADMIN"), deleteUserById);
 
 export default router;
-

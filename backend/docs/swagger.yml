@@ -1,129 +1,82 @@
 openapi: 3.0.0
 info:
-  title: RealEstate API
+  title: RealEstate Management API
   version: 1.0.0
-  description: API for real estate management with authentication, authorization (JWT, roles), Zod validation, global error handling, and modules for users, properties, and units (landlord/admin CRUD with ownership).
+  description: |
+    Complete backend API for real estate management.
+
+    **Roles & Permissions Overview**:
+    - **SUPER-ADMIN** (first admin, managedById = null): full access to everything
+    - **SUB-ADMIN** (admin with managedById set): restricted to landlords/tenants they manage
+    - **LANDLORD**: own properties/units, create/assign tenants to own units
+    - **TENANT**: view own unit, invoices, payments, bookings, dashboard
+
+    **Security**: Most endpoints require Bearer JWT token (Authorization: Bearer <token>).
+    Public endpoints: /auth/registry (for LANDLORD/TENANT), /auth/login
 
 servers:
   - url: http://localhost:3000/api/v1
-    description: Local server
+    description: Local development server
 
 paths:
-
   /auth/registry:
     post:
-      summary: Register a new user (Admin, Landlord, Tenant)
-      description: >
-        - Validates input with Zod (e.g., email format, password min 6 chars, role enum).  
-        - TENANT & LANDLORD: registration allowed without token.  
-        - ADMIN:  
-          • If no admin exists → no token needed.  
-          • If admin exists → must send Bearer token from an admin.  
-        - Throws AppError for validation fails, handled globally.
+      summary: Register new user (public for LANDLORD/TENANT, protected for ADMIN)
+      description: |
+        - TENANT & LANDLORD: no token required.
+        - ADMIN: token required if at least one admin already exists (first admin is free).
+        - Validates name, email, password, role (enum).
       tags:
-        - Authentication
+        - Auth
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - name
-                - email
-                - password
-                - role
+              required: [name, email, password, role]
               properties:
-                name:
-                  type: string
-                  minLength: 1
-                  description: Required, non-empty string.
-                email:
-                  type: string
-                  format: email
-                  description: Valid email format.
-                password:
-                  type: string
-                  minLength: 6
-                  description: At least 6 characters.
-                role:
-                  type: string
-                  enum: [ADMIN, LANDLORD, TENANT]
-                  description: Must be one of the allowed roles.
+                name: { type: string, minLength: 1 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+                role: { type: string, enum: [ADMIN, LANDLORD, TENANT] }
       responses:
         "201":
-          description: User created successfully
+          description: User created
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   message:
-                    type: string
-                    example: "user created successfully"
+                    { type: string, example: "User created successfully" }
                   data:
                     type: object
                     properties:
-                      name:
-                        type: string
-                      email:
-                        type: string
-                      role:
-                        type: string
-                      token:
-                        type: string
-        "401":
-          description: Token required/expired/invalid for creating admin, or insufficient permissions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Only admins can create new admins.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "422":
-          description: Validation failed (missing fields, invalid format, duplicate email) or invalid role.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppErrorWithDetails'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+                      id: { type: integer }
+                      name: { type: string }
+                      email: { type: string }
+                      role: { type: string }
+                      token: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /auth/login:
     post:
       summary: Login user
-      description: >
-        - Validates input with Zod (email format, password min 6 chars).  
-        - Returns JWT on success.  
-        - Uses bcrypt for password compare, throws AppError for fails, handled globally.
       tags:
-        - Authentication
+        - Auth
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - password
+              required: [email, password]
               properties:
-                email:
-                  type: string
-                  format: email
-                  description: Valid email format.
-                password:
-                  type: string
-                  minLength: 6
-                  description: At least 6 characters.
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
       responses:
         "200":
           description: Login success
@@ -133,46 +86,21 @@ paths:
                 type: object
                 properties:
                   message:
-                    type: string
-                    example: "user logged in successfully"
+                    { type: string, example: "User logged in successfully" }
                   data:
                     type: object
                     properties:
-                      id:
-                        type: integer
-                      email:
-                        type: string
-                      role:
-                        type: string
-                      token:
-                        type: string
-        "401":
-          description: Wrong password or invalid credentials.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "422":
-          description: Validation failed (missing fields, invalid format) or invalid email.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppErrorWithDetails'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+                      id: { type: integer }
+                      email: { type: string }
+                      role: { type: string }
+                      token: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /users:
     get:
-      summary: List all users with search/filter (Admin only)
-      description: >
-        - Protected by JWT and admin role.  
-        - Supports filters: role (exact), email (partial, case-insensitive).  
-        - Returns safe fields (no password).  
-        - Throws AppError for unauthorized, handled globally.
+      summary: List all users (Admin only)
       tags:
         - Users
       security:
@@ -180,115 +108,32 @@ paths:
       parameters:
         - name: role
           in: query
-          schema:
-            type: string
-            enum: [ADMIN, LANDLORD, TENANT]
-          description: Filter by exact role.
+          schema: { type: string, enum: [ADMIN, LANDLORD, TENANT] }
         - name: email
           in: query
-          schema:
-            type: string
-          description: Partial email search (case-insensitive).
+          schema: { type: string }
       responses:
         "200":
-          description: List of users
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-        "401":
-          description: Unauthorized (missing/invalid token)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden (non-admin role)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-
-  /users/{id}:
-    get:
-      summary: Get user by ID (Admin only)
-      description: >
-        - Protected by JWT and admin role.  
-        - Returns safe fields.  
-        - Throws 404 if not found.
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: User ID
-      responses:
-        "200":
-          description: User details
+          description: Users list
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: "success"
+                  message: { type: string }
                   data:
-                    type: object
-                    properties:
-                      user:
-                        $ref: '#/components/schemas/User'
-        "400":
-          description: Invalid ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/User" },
+                    }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
+  /users/{id}:
     put:
       summary: Update user by ID (Admin only)
-      description: >
-        - Protected by JWT and admin role.  
-        - Partial updates allowed (Zod validates optional fields).  
-        - Hash password if provided.  
-        - Throws 404 if not found, 422 for validation/duplicate.
+      description: Can update name, email, password, managedById (for landlords), unitId (for tenants), etc.
       tags:
         - Users
       security:
@@ -297,32 +142,19 @@ paths:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-          description: User ID
+          schema: { type: integer }
       requestBody:
-        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
-                name:
-                  type: string
-                  minLength: 1
-                  description: Optional, non-empty string.
-                email:
-                  type: string
-                  format: email
-                  description: Optional, valid email.
-                password:
-                  type: string
-                  minLength: 6
-                  description: Optional, at least 6 characters (hashed if provided).
-                role:
-                  type: string
-                  enum: [ADMIN, LANDLORD, TENANT]
-                  description: Optional, valid role.
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+                managedById:
+                  { type: integer, description: "Only for LANDLORD role" }
+                unitId: { type: integer, description: "Only for TENANT role" }
       responses:
         "200":
           description: User updated
@@ -331,118 +163,18 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: "success"
-                  data:
-                    $ref: '#/components/schemas/User'
-        "400":
-          description: Invalid ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "422":
-          description: Validation failed or duplicate value
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppErrorWithDetails'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-
-    delete:
-      summary: Delete user by ID (Admin only)
-      description: >
-        - Protected by JWT and admin role.  
-        - Throws 404 if not found.
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: User ID
-      responses:
-        "200":
-          description: User deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "success"
-                  message:
-                    type: string
-                    example: "User deleted successfully"
-        "400":
-          description: Invalid ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+                  message: { type: string }
+                  data: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /properties:
     post:
-      summary: Create property (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Validates with Zod (name/location/categoryId required).  
-        - Auto-sets landlordId from token.  
-        - Checks category exists.  
-        - Throws 404 if category not found, 422 for validation.
+      summary: Create property (ADMIN/LANDLORD)
       tags:
         - Properties
       security:
@@ -453,76 +185,21 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - name
-                - location
-                - categoryId
+              required: [name, location, categoryId]
               properties:
-                name:
-                  type: string
-                  minLength: 1
-                  description: Required, non-empty string.
-                location:
-                  type: string
-                  minLength: 1
-                  description: Required, non-empty string.
-                categoryId:
-                  type: integer
-                  description: Required, positive integer (category ID).
-                description:
-                  type: string
-                  description: Optional description.
+                name: { type: string }
+                location: { type: string }
+                categoryId: { type: integer }
+                description: { type: string }
       responses:
-        "201":
-          description: Property created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "success"
-                  data:
-                    $ref: '#/components/schemas/Property'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden (wrong role)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: Category not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "422":
-          description: Validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppErrorWithDetails'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+        "201": { $ref: "#/components/responses/PropertyCreated" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
     get:
-      summary: List properties with filters (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Filters: location (partial), categoryId (exact).  
-        - Landlords see own; admins all.  
-        - Includes category details.
+      summary: List properties (ADMIN/LANDLORD)
       tags:
         - Properties
       security:
@@ -530,57 +207,31 @@ paths:
       parameters:
         - name: location
           in: query
-          schema:
-            type: string
-          description: Partial location search (case-insensitive).
+          schema: { type: string }
         - name: categoryId
           in: query
-          schema:
-            type: integer
-          description: Exact category ID filter.
+          schema: { type: integer }
       responses:
         "200":
-          description: List of properties
+          description: Properties list
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: "success"
+                  message: { type: string }
                   data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PropertyWithCategory'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Property" },
+                    }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /properties/{id}:
     put:
-      summary: Update property by ID (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Partial updates (Zod validates).  
-        - Landlords update own; admins all.  
-        - Checks category if changed.  
-        - Throws 403 if not owner, 404 if not found.
+      summary: Update property (ADMIN/LANDLORD)
       tags:
         - Properties
       security:
@@ -589,87 +240,27 @@ paths:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-          description: Property ID
+          schema: { type: integer }
       requestBody:
-        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
-                name:
-                  type: string
-                  minLength: 1
-                  description: Optional, non-empty string.
-                location:
-                  type: string
-                  minLength: 1
-                  description: Optional, non-empty string.
-                categoryId:
-                  type: integer
-                  description: Optional, positive integer.
-                description:
-                  type: string
-                  description: Optional description.
+                name: { type: string }
+                location: { type: string }
+                categoryId: { type: integer }
+                description: { type: string }
       responses:
-        "200":
-          description: Property updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "success"
-                  data:
-                    $ref: '#/components/schemas/Property'
-        "400":
-          description: Invalid ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden (not owner or wrong role)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: Property or category not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "422":
-          description: Validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppErrorWithDetails'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+        "200": { $ref: "#/components/responses/PropertyUpdated" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
     delete:
-      summary: Delete property by ID (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Landlords delete own; admins all.  
-        - Checks for associated units.  
-        - Throws 403 if not owner, 404 if not found, 400 if has units.
+      summary: Delete property (ADMIN/LANDLORD)
       tags:
         - Properties
       security:
@@ -678,9 +269,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-          description: Property ID
+          schema: { type: integer }
       responses:
         "200":
           description: Property deleted
@@ -689,51 +278,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: "success"
                   message:
-                    type: string
-                    example: "Property deleted successfully"
-        "400":
-          description: Invalid ID or has associated units
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden (not owner or wrong role)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: Property not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+                    { type: string, example: "Property deleted successfully" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /units:
     post:
-      summary: Create unit (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Validates with Zod (name/price/propertyId/status required).  
-        - Checks property exists and ownership.  
-        - Throws 404 if property not found, 403 if not owner, 422 for validation.
+      summary: Create unit (ADMIN/LANDLORD)
       tags:
         - Units
       security:
@@ -744,83 +299,24 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - name
-                - price
-                - propertyId
-                - status
+              required: [name, price, propertyId, status]
               properties:
-                name:
-                  type: string
-                  minLength: 1
-                  description: Required, non-empty string.
-                price:
-                  type: number
-                  description: Required, positive number.
-                propertyId:
-                  type: integer
-                  description: Required, positive integer (property ID).
-                status:
-                  type: string
-                  enum: [available, occupied]
-                  description: Required status.
-                size:
-                  type: string
-                  description: Optional size.
-                description:
-                  type: string
-                  description: Optional description.
+                name: { type: string }
+                price: { type: number }
+                propertyId: { type: integer }
+                status: { type: string, enum: [available, occupied] }
+                size: { type: string }
+                description: { type: string }
       responses:
-        "201":
-          description: Unit created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "success"
-                  data:
-                    $ref: '#/components/schemas/Unit'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden (not owner or wrong role)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: Property not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "422":
-          description: Validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppErrorWithDetails'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+        "201": { $ref: "#/components/responses/UnitCreated" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
     get:
-      summary: List units with filters (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Filters: propertyId (exact), status (enum).  
-        - Landlords see own; admins all.  
-        - Includes property details.
+      summary: List units (ADMIN/LANDLORD)
       tags:
         - Units
       security:
@@ -828,57 +324,31 @@ paths:
       parameters:
         - name: propertyId
           in: query
-          schema:
-            type: integer
-          description: Exact property ID filter.
+          schema: { type: integer }
         - name: status
           in: query
-          schema:
-            type: string
-            enum: [available, occupied]
-          description: Status filter.
+          schema: { type: string, enum: [available, occupied] }
       responses:
         "200":
-          description: List of units
+          description: Units list
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: "success"
+                  message: { type: string }
                   data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/UnitWithProperty'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Unit" },
+                    }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /units/{id}:
     put:
-      summary: Update unit by ID (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Partial updates (Zod validates).  
-        - Landlords update own; admins all.  
-        - Throws 403 if not owner, 404 if not found.
+      summary: Update unit (ADMIN/LANDLORD)
       tags:
         - Units
       security:
@@ -887,90 +357,28 @@ paths:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-          description: Unit ID
+          schema: { type: integer }
       requestBody:
-        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
-                name:
-                  type: string
-                  minLength: 1
-                  description: Optional, non-empty string.
-                price:
-                  type: number
-                  description: Optional, positive number.
-                status:
-                  type: string
-                  enum: [available, occupied]
-                  description: Optional status.
-                size:
-                  type: string
-                  description: Optional size.
-                description:
-                  type: string
-                  description: Optional description.
+                name: { type: string }
+                price: { type: number }
+                status: { type: string, enum: [available, occupied] }
+                size: { type: string }
+                description: { type: string }
       responses:
-        "200":
-          description: Unit updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "success"
-                  data:
-                    $ref: '#/components/schemas/Unit'
-        "400":
-          description: Invalid ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden (not owner or wrong role)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: Unit not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
-        "422":
-          description: Validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppErrorWithDetails'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppError'
+        "200": { $ref: "#/components/responses/UnitUpdated" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
     delete:
-      summary: Delete unit by ID (Landlord/Admin only)
-      description: >
-        - Protected by JWT.  
-        - Landlords delete own; admins all.  
-        - Checks if occupied.  
-        - Throws 403 if not owner, 404 if not found, 400 if occupied.
+      summary: Delete unit (ADMIN/LANDLORD)
       tags:
         - Units
       security:
@@ -979,9 +387,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-          description: Unit ID
+          schema: { type: integer }
       responses:
         "200":
           description: Unit deleted
@@ -990,42 +396,251 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: "success"
                   message:
-                    type: string
-                    example: "Unit deleted successfully"
-        "400":
-          description: Invalid ID or occupied unit
+                    { type: string, example: "Unit deleted successfully" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /landlords:
+    get:
+      summary: List landlords
+      description: |
+        - Super-admin: all landlords
+        - Sub-admin: only landlords with managedById = sub-admin.id
+        - Landlord: only self
+      tags:
+        - Landlords
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Landlords list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppError'
-        "401":
-          description: Unauthorized
+                type: object
+                properties:
+                  message: { type: string }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/User" },
+                    }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /landlords/{id}:
+    get:
+      summary: Get landlord by ID
+      tags:
+        - Landlords
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Landlord details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppError'
-        "403":
-          description: Forbidden (not owner or wrong role)
+                type: object
+                properties:
+                  message: { type: string }
+                  data: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /landlords/dashboard:
+    get:
+      summary: Landlord dashboard (properties count, units count, etc.)
+      tags:
+        - Landlords
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppError'
-        "404":
-          description: Unit not found
+                type: object
+                properties:
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      properties: { type: array }
+                      propertiesCount: { type: integer }
+                      unitsCount: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /tenants:
+    post:
+      summary: Create tenant (ADMIN/LANDLORD)
+      tags:
+        - Tenants
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+                unitId: { type: integer, description: Required for landlords }
+      responses:
+        "201":
+          description: Tenant created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppError'
-        "500":
-          description: Internal Server Error
+                type: object
+                properties:
+                  message: { type: string }
+                  data: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+    get:
+      summary: List tenants (ADMIN/LANDLORD)
+      tags:
+        - Tenants
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Tenants list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppError'
+                type: object
+                properties:
+                  message: { type: string }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/User" },
+                    }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /tenants/{id}:
+    get:
+      summary: Get tenant by ID (ADMIN/LANDLORD)
+      tags:
+        - Tenants
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Tenant details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  data: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /tenants/{id}/assign-unit:
+    put:
+      summary: Assign tenant to unit (ADMIN/LANDLORD)
+      tags:
+        - Tenants
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [unitId]
+              properties:
+                unitId: { type: integer }
+      responses:
+        "200":
+          description: Tenant assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      tenant: { $ref: "#/components/schemas/User" }
+                      unit: { $ref: "#/components/schemas/Unit" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /tenants/dashboard:
+    get:
+      summary: Tenant dashboard
+      tags:
+        - Tenants
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Tenant dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      unit: { $ref: "#/components/schemas/Unit" }
+                      invoices: { type: array }
+                      payments: { type: array }
+                      bookings: { type: array }
+                      invoicesCount: { type: integer }
+                      bookingsCount: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
 components:
   securitySchemes:
@@ -1035,120 +650,99 @@ components:
       bearerFormat: JWT
 
   schemas:
-    AppError:
-      type: object
-      properties:
-        status:
-          type: string
-          example: "fail"
-        message:
-          type: string
-          example: "Invalid token"
-    AppErrorWithDetails:
-      type: object
-      properties:
-        status:
-          type: string
-          example: "fail"
-        message:
-          type: string
-          example: "Validation failed"
-        details:
-          type: array
-          items:
-            type: string
-          example: ["email: Invalid email format", "password: Password must be at least 6 characters long"]
     User:
       type: object
       properties:
-        id:
-          type: integer
-        name:
-          type: string
-        email:
-          type: string
-        role:
-          type: string
-          enum: [ADMIN, LANDLORD, TENANT]
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [ADMIN, LANDLORD, TENANT] }
+        managedById: { type: integer, nullable: true }
+        unitId: { type: integer, nullable: true }
     Property:
       type: object
       properties:
-        id:
-          type: integer
-        name:
-          type: string
-        location:
-          type: string
-        categoryId:
-          type: integer
-        description:
-          type: string
-        landlordId:
-          type: integer
-    PropertyWithCategory:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        location:
-          type: string
-        description:
-          type: string
-        landlordId:
-          type: integer
-        category:
-          type: object
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
+        id: { type: integer }
+        name: { type: string }
+        location: { type: string }
+        categoryId: { type: integer }
+        description: { type: string }
+        landlordId: { type: integer, nullable: true }
     Unit:
       type: object
       properties:
-        id:
-          type: integer
-        name:
-          type: string
-        price:
-          type: number
-        status:
-          type: string
-          enum: [available, occupied]
-        size:
-          type: string
-        description:
-          type: string
-        propertyId:
-          type: integer
-    UnitWithProperty:
+        id: { type: integer }
+        name: { type: string }
+        price: { type: number }
+        status: { type: string, enum: [available, occupied] }
+        size: { type: string }
+        description: { type: string }
+        propertyId: { type: integer }
+    AppError:
       type: object
       properties:
-        id:
-          type: integer
-        name:
-          type: string
-        price:
-          type: number
-        status:
-          type: string
-          enum: [available, occupied]
-        size:
-          type: string
-        description:
-          type: string
-        propertyId:
-          type: integer
-        property:
-          type: object
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            location:
-              type: string
-            landlordId:
-              type: integer
+        status: { type: string, example: "fail" }
+        message: { type: string }
+    AppErrorWithDetails:
+      type: object
+      properties:
+        status: { type: string, example: "fail" }
+        message: { type: string }
+        details: { type: array, items: { type: string } }
+
+  responses:
+    Unauthorized:
+      description: Unauthorized (missing/invalid token)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+    Forbidden:
+      description: Forbidden (wrong role or ownership)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+    BadRequest:
+      description: Bad request (invalid input)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppErrorWithDetails"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+    PropertyCreated:
+      description: Property created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                { type: string, example: "Property created successfully" }
+              data: { $ref: "#/components/schemas/Property" }
+    UnitCreated:
+      description: Unit created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string, example: "Unit created successfully" }
+              data: { $ref: "#/components/schemas/Unit" }
