@@ -1,71 +1,163 @@
-# RealApi - Real Estate Management Backend
-**A secure, scalable backend API for real estate management**  
-Built with Node.js, Express, Prisma (PostgreSQL), JWT authentication, role-based access control (Admin, Landlord, Tenant), Zod validation, and global error handling. Ideal for broker platforms where admins oversee, landlords manage properties/units/tenants, and tenants book/pay.
+# RealEstate Management System API
 
-## Features
-- **Authentication**: Register/login with roles, password hashing (bcrypt), JWT tokens
-- **Role-Based Access**: Admins manage all; Landlords own/manage properties/units; Tenants view/pay assigned units
-- **User Management**: Admin CRUD users, assign tenants to units with availability checks
-- **Property & Unit CRUD**: Ownership enforced, filters (location/category/status), delete restrictions (no delete if occupied/units exist)
-- **Relationships**: Landlord → Properties (1:N), Property → Units (1:N), Tenant → Unit (M:1)
-- **Validation & Errors**: Zod for input, AppError for custom messages, global handler
-- **API Documentation**: Swagger UI at `/docs`
-- **Clean Architecture**: Controller → Service → Repository pattern
-- **Open Source**: MIT License, contributions welcome!
+Backend API for a complete real estate platform — manage properties, units, landlords, tenants, and role-based access (super-admin, sub-admin, landlord, tenant).
+
+Built with clean architecture, JWT authentication, role-based authorization, Prisma ORM, Zod validation, and global error handling.
 
 ## Tech Stack
-- Node.js + Express.js
-- Prisma ORM + PostgreSQL
-- JWT + bcrypt (auth)
-- Zod (validation)
-- Swagger (docs)
-- Nodemon (dev)
-- GitHub Actions (optional CI)
+
+- **Node.js** — Runtime  
+- **Express.js** — Web framework  
+- **Prisma** — ORM & database migrations  
+- **PostgreSQL** — Relational database  
+- **JWT** — Authentication & authorization  
+- **bcrypt** — Password hashing  
+- **Zod** — Input validation  
+- **AppError** — Custom error handling  
+
+## Features
+
+- User authentication (register, login, JWT)  
+- Role-based access control (ADMIN, LANDLORD, TENANT)  
+- Super-admin / sub-admin hierarchy (managedById)  
+- Property management (CRUD)  
+- Unit management (CRUD)  
+- Landlord module (list, dashboard, update, delete)  
+- Tenant management (create, assign to unit, list, dashboard)  
+- Ownership & supervision checks (landlord → units → tenants)  
+- Global error handling & consistent responses  
 
 ## Installation
-1. Clone the repo:
+
+1. Clone the repository
    ```bash
-   git clone https://github.com/NUURKEY47/RealApi.git
-   cd RealApi
+   git clone https://github.com/yourusername/realestate-api.git
+   cd realestate-api
 
-Install dependencies:Bashnpm install
-Create .env from .env.example and fill in:textDATABASE_URL="postgresql://user:pass@localhost:5432/realapi"
-JWT_SECRET="your-very-secure-secret"
-Initialize Prisma:Bashnpx prisma generate
-npx prisma migrate dev --name init
-Start development server:Bashnpm run dev
-Access Swagger docs: http://localhost:3000/api-docs
+Install dependenciesBashnpm install
+Set up environment variables
+Create .env file in root:envDATABASE_URL="postgresql://user:password@localhost:5432/realestate?schema=public"
+JWT_SECRET=your_very_long_random_secret_here
+PORT=3000
+NODE_ENV=development
+Run database migrations (Prisma)Bashnpx prisma migrate dev --name init
+Start the serverDevelopment mode (with auto-restart):Bashnpm run devProduction mode:Bashnpm startServer runs on http://localhost:3000/api/v1
 
-Usage
+Project Structure
+textrealestate-api/
+├── src/
+│   ├── config/               # Prisma client, env
+│   ├── middlewares/          # auth, validation, error handler
+│   ├── modules/              # Feature modules (auth, user, property, unit, landlord, tenant)
+│   │   ├── auth/
+│   │   ├── user/
+│   │   ├── property/
+│   │   ├── unit/
+│   │   ├── landlord/
+│   │   └── tenant/
+│   ├── utils/                # AppError, sendResponse, etc.
+│   ├── validation/           # Zod schemas
+│   └── server.js             # Main entry point
+├── prisma/
+│   └── schema.prisma         # Database schema
+├── .env                      # Environment variables (never commit!)
+├── package.json
+└── README.md
+Available Scripts
+Bashnpm run dev       # Development with nodemon (auto-restart)
+npm start         # Production mode
+npx prisma studio # Open Prisma Studio (visual DB explorer)
+npx prisma migrate dev  # Run migrations
+Environment Variables
 
-Register first admin (no token needed): POST /api/v1/auth/registry with role "ADMIN"
-Login for token: POST /api/v1/auth/login
-Use Bearer token in Authorization header for protected routes
-Test all endpoints in Postman (collection in repo: RealestateApi.postman_collection.json)
 
-API Endpoints (Summary)
 
-Auth: /auth/registry (POST), /auth/login (POST)
-Users: /users (GET list/filter), /users/:id (GET/PUT/DELETE) – admin only
-Properties: /properties (POST/GET list), /properties/:id (PUT/DELETE) – landlord own/admin all
-Units: /units (POST/GET list), /units/:id (PUT/DELETE) – landlord own/admin all
-See Swagger at /api-docs for full docs, schemas, and examples.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+VariableDescriptionExampleDATABASE_URLPostgreSQL connection stringpostgresql://user:pass@localhost:5432/dbJWT_SECRETSecret key for signing/verifying JWTsuper-long-random-string-123456789PORTServer port3000NODE_ENVEnvironment modedevelopment / production
+API Documentation
+See API_DOCUMENTATION.md for full endpoint details.
+Authentication
+
+POST /api/v1/auth/registry — Register new user
+POST /api/v1/auth/login — Login and get JWT
+
+Users
+
+GET /api/v1/users — List users (Admin only)
+PUT /api/v1/users/:id — Update user (Admin only)
+
+Properties
+
+POST /api/v1/properties — Create property
+GET /api/v1/properties — List properties
+PUT /api/v1/properties/:id — Update property
+DELETE /api/v1/properties/:id — Delete property
+
+Units
+
+POST /api/v1/units — Create unit
+GET /api/v1/units — List units
+PUT /api/v1/units/:id — Update unit
+DELETE /api/v1/units/:id — Delete unit
+
+Landlords
+
+GET /api/v1/landlords — List landlords (role-filtered)
+GET /api/v1/landlords/:id — Get landlord
+GET /api/v1/landlords/dashboard — Landlord dashboard
+
+Tenants
+
+POST /api/v1/tenants — Create tenant
+PUT /api/v1/tenants/:id/assign-unit — Assign tenant to unit
+GET /api/v1/tenants — List tenants
+GET /api/v1/tenants/:id — Get tenant
+GET /api/v1/tenants/dashboard — Tenant dashboard
+
+Security Highlights
+
+Passwords hashed with bcrypt
+JWT tokens for authentication
+Role-based middleware & service checks
+Ownership verification (landlord → property → unit → tenant)
+Supervision chain (super-admin → sub-admin → landlord)
+Global error handling with AppError
 
 Contributing
-Contributions are welcome! Please see CONTRIBUTING.md for guidelines.
 
-Fork the repo
-Create your branch (git checkout -b feature/awesome-feature)
-Commit changes (git commit -m 'Add awesome feature')
-Push (git push origin feature/awesome-feature)
+Fork the repository
+Create your feature branch (git checkout -b feature/add-invoice)
+Commit your changes (git commit -m 'Add invoice module')
+Push to the branch (git push origin feature/add-invoice)
 Open a Pull Request
 
 License
-MIT License – see LICENSE for details.
-Contact
-
-GitHub: @NUURKEY47
-LinkedIn: [Your LinkedIn Profile]
-Email: [your.email@example.com]
-
-Made with ❤️ in Nairobi, Kenya
+ISC
+Made with ❤️ in Nairobi by noor
+Last updated: March 2026
