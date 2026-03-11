@@ -68,38 +68,7 @@ Bashnpm run dev       # Development with nodemon (auto-restart)
 npm start         # Production mode
 npx prisma studio # Open Prisma Studio (visual DB explorer)
 npx prisma migrate dev  # Run migrations
-Environment Variables
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-VariableDescriptionExampleDATABASE_URLPostgreSQL connection stringpostgresql://user:pass@localhost:5432/dbJWT_SECRETSecret key for signing/verifying JWTsuper-long-random-string-123456789PORTServer port3000NODE_ENVEnvironment modedevelopment / production
 API Documentation
 See API_DOCUMENTATION.md for full endpoint details.
 Authentication
