@@ -1,4 +1,4 @@
-** RealEstate Management System API**
+🏢 RealEstate Management System API
 
 Backend API for a complete real estate management platform that manages:
 
@@ -14,7 +14,7 @@ role-based access control
 
 The system is built using clean architecture and modern backend practices including authentication, authorization, validation, and error handling.
 
-** Tech Stack**
+🚀 Tech Stack
 Technology	Purpose
 Node.js	Runtime environment
 Express.js	Web framework
@@ -24,7 +24,7 @@ JWT	Authentication
 bcrypt	Password hashing
 Zod	Input validation
 AppError	Custom error handling
- **Features**
+✨ Features
 Authentication
 
 User registration
@@ -45,9 +45,13 @@ LANDLORD
 
 TENANT
 
-Includes permission checks and role middleware.
+Includes:
 
-**Property Management**
+role middleware
+
+permission checks
+
+Property Management
 
 Create property
 
@@ -57,7 +61,7 @@ Update property
 
 Delete property
 
-**Unit Management**
+Unit Management
 
 Create unit
 
@@ -67,7 +71,7 @@ Update unit
 
 Delete unit
 
-**Landlord Module**
+Landlord Module
 
 Landlord listing
 
@@ -77,7 +81,7 @@ Update landlord
 
 Delete landlord
 
-**Tenant Management**
+Tenant Management
 
 Create tenant
 
@@ -87,7 +91,7 @@ List tenants
 
 Tenant dashboard
 
-**Security**
+Security
 
 Ownership checks (landlord → property → unit → tenant)
 
@@ -95,13 +99,13 @@ Supervision hierarchy (super-admin → sub-admin → landlord)
 
 Global error handling with consistent responses
 
- **Installation**
-1. Clone the repository
+📦 Installation
+1️⃣ Clone the repository
 git clone https://github.com/yourusername/realestate-api.git
 cd realestate-api
-2. Install dependencies
+2️⃣ Install dependencies
 npm install
-3. Setup environment variables
+3️⃣ Setup environment variables
 
 Create a .env file in the root directory.
 
@@ -109,9 +113,9 @@ DATABASE_URL="postgresql://user:password@localhost:5432/realestate?schema=public
 JWT_SECRET=your_very_long_random_secret_here
 PORT=3000
 NODE_ENV=development
-4. Run database migrations
+4️⃣ Run database migrations
 npx prisma migrate dev --name init
-5. Start the server
+5️⃣ Start the server
 
 Development mode (auto restart)
 
@@ -124,7 +128,7 @@ npm start
 Server runs at:
 
 http://localhost:3000/api/v1
-** Project Structure**
+📁 Project Structure
 realestate-api
 │
 ├── prisma
@@ -159,18 +163,13 @@ realestate-api
 ├── .env
 ├── package.json
 └── README.md
+🌐 API Overview
 
-**Base URL**
+Base URL
 
 /api/v1
 Authentication
-
-Register user
-
 POST /auth/register
-
-Login
-
 POST /auth/login
 Users
 GET /users
@@ -217,11 +216,11 @@ Create a feature branch
 
 git checkout -b feature/add-invoice
 
-Commit changes
+Commit your changes
 
 git commit -m "Add invoice module"
 
-Push branch
+Push the branch
 
 git push origin feature/add-invoice
 
