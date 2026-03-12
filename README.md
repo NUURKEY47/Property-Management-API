@@ -47,8 +47,8 @@ npx prisma db push
 Start the serverDevelopment (auto-restart):Bashnpm run devProduction:Bashnpm start
 
 Server runs at: http://localhost:3000/api/v1
-Project Structure
-textRealEstateApiV2/backend/
+**Project Structure**
+RealEstateApiV2/backend/
 ├── src/
 │   ├── config/              # DB connection
 │   ├── middlewares/         # auth, validation, error
