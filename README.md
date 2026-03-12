@@ -32,13 +32,23 @@ Built with clean architecture, modern Node.js practices, Prisma + PostgreSQL, JW
 
 ## Installation
 
-1. Clone the repository  
+1. Clone the repository
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/yourusername/RealEstateApiV2.git
    cd RealEstateApiV2/backend
 
-Server runs at: http://localhost:3000/api/v1
+Install dependenciesBashnpm install
+Create .env file in rootenvDATABASE_URL=postgresql://user:password@localhost:5432/realstate_MasterApi143
+JWT_SECRET=your_very_long_random_secret_here
+PORT=3000
+NODE_ENV=development
+Generate Prisma client & sync schemaBashnpx prisma generate
+npx prisma db push
+Start the serverDevelopment mode (auto-restart):Bashnpm run devProduction mode:Bashnpm start
+
+Server available at: http://localhost:3000/api/v1
 ## Project Structure
+Clean architecture with modules separated by domain (user, property, unit, landlord, tenant).
 
 ```text
 RealEstateApiV2/backend/
@@ -61,3 +71,62 @@ RealEstateApiV2/backend/
 ├── .env
 ├── package.json
 └── README.md
+
+API Endpoints (Overview)
+Authentication
+
+POST /auth/registry — Register user
+POST /auth/login — Login
+
+Users
+
+GET /users — List users (Admin only)
+PUT /users/:id — Update user (managedById, unitId, etc.)
+DELETE /users/:id — Delete user
+
+Properties
+
+POST /properties — Create property
+GET /properties — List properties
+PUT /properties/:id — Update property
+DELETE /properties/:id — Delete property
+
+Units
+
+POST /units — Create unit
+GET /units — List units
+PUT /units/:id — Update unit
+DELETE /units/:id — Delete unit
+
+Landlords
+
+GET /landlords — List landlords (role-filtered)
+GET /landlords/dashboard — Landlord dashboard
+
+Tenants
+
+POST /tenants — Create tenant
+PUT /tenants/:id/assign-unit — Assign tenant to unit
+GET /tenants — List tenants
+
+Full Swagger documentation available at /api-docs (if enabled) or via Postman.
+Security Highlights
+
+Passwords hashed with bcrypt
+JWT tokens for authentication
+Protected routes with verifyToken & authorizeRoles
+Ownership checks (landlordId, managedById)
+Global error handling with AppError
+
+Contributing
+
+Fork the repository
+Create feature branch (git checkout -b feature/amazing-feature)
+Commit changes (git commit -m 'Add amazing feature')
+Push (git push origin feature/amazing-feature)
+Open Pull Request
+
+License
+ISC
+Made with ❤️ in Nairobi by Noor Mohamed Abdikadir
+Last updated: March 2026
