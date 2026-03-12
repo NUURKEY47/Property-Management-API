@@ -37,15 +37,6 @@ Built with clean architecture, modern Node.js practices, Prisma + PostgreSQL, JW
    git clone <your-repo-url>
    cd RealEstateApiV2/backend
 
-Install dependenciesBashnpm install
-Create .env file in rootenvDATABASE_URL=postgresql://user:password@localhost:5432/realstate_MasterApi143
-JWT_SECRET=your_very_long_random_secret_here
-PORT=3000
-NODE_ENV=development
-Generate Prisma client & push schemaBashnpx prisma generate
-npx prisma db push
-Start the serverDevelopment (auto-restart):Bashnpm run devProduction:Bashnpm start
-
 Server runs at: http://localhost:3000/api/v1
 **Project Structure**
 RealEstateApiV2/backend/
