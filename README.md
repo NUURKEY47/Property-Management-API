@@ -38,22 +38,24 @@ Built with clean architecture, modern Node.js practices, Prisma + PostgreSQL, JW
    cd RealEstateApiV2/backend
 
 Server runs at: http://localhost:3000/api/v1
-**Project Structure**
+## Project Structure
+
+```text
 RealEstateApiV2/backend/
 ├── src/
-│   ├── config/              # DB connection
-│   ├── middlewares/         # auth, validation, error
+│   ├── config/                  # Database connection
+│   ├── middlewares/             # Auth, validation, error handler
 │   ├── modules/
-│   │   ├── auth/            # login, register
-│   │   ├── user/            # user CRUD + managedById
-│   │   ├── property/        # property CRUD
-│   │   ├── unit/            # unit CRUD + assignment
-│   │   ├── landlord/        # landlord list/dashboard
-│   │   └── tenant/          # tenant create/assign
-│   ├── routes/              # all route files
-│   ├── utils/               # AppError, sendResponse, catchAsync
-│   ├── app.js
-│   └── server.js
+│   │   ├── auth/                # Login, register, checkFirstAdmin
+│   │   ├── user/                # User CRUD + managedById
+│   │   ├── property/            # Property CRUD
+│   │   ├── unit/                # Unit CRUD + assignment
+│   │   ├── landlord/            # Landlord list/dashboard
+│   │   └── tenant/              # Tenant create/assign
+│   ├── routes/                  # All route files
+│   ├── utils/                   # AppError, sendResponse, catchAsync
+│   ├── app.js                   # Express app setup
+│   └── server.js                # Server entry point
 ├── prisma/
 │   └── schema.prisma
 ├── .env
